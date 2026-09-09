@@ -78,11 +78,11 @@ Roda o experimento completo (4 produtores, 4 consumidores, 2500 itens por
 produtor, 10000 itens no total, buffer de 10 slots) **30 vezes para cada um
 dos três modos**, e registra cada execução individual em
 `results/battery_results.csv`. O veredito é assimétrico entre condições, e
-foi definido antes de rodar a bateria (`docs/spec/spec.md`, seção 5):
-espera-se **zero divergências em todas as 30 execuções** do modo `full`
-(é uma invariante que deve sempre se sustentar), e **divergência em quase
-todas as 30 execuções** dos modos `none` e `counting` (uma corrida de dados
-não se comprova com uma execução só, é preciso ver que ela se repete).
+foi definido antes de rodar a bateria (`PRD.md`, seção 6, critérios CA1 a
+CA3): espera-se **zero divergências em todas as 30 execuções** do modo
+`full` (é uma invariante que deve sempre se sustentar), e **divergência em
+quase todas as 30 execuções** dos modos `none` e `counting` (uma corrida de
+dados não se comprova com uma execução só, é preciso ver que ela se repete).
 
 ## 3. Execução do experimento e resultados
 
