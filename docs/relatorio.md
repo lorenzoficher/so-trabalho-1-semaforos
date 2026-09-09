@@ -227,9 +227,9 @@ escala aumenta, e com frequência crescente (diferença de -100.712 na
 execução divergente com 200.000 itens, e de -504.982 e -250.337 nas duas
 divergentes com 1.000.000). Ou seja, a corrida sobre os índices existe de
 fato no modo `counting`; o que a instrumentação faz é apenas torná-la
-observável
-de forma confiável em uma escala que roda em menos de um segundo, em vez de
-exigir milhões de itens e depender da sorte do agendador.
+observável de forma confiável em uma escala que roda em menos de um
+segundo, em vez de exigir milhões de itens e depender da sorte do
+agendador.
 
 Isso também explica por que o `sleep(0)` foi mantido na bateria oficial:
 sem ele, com os parâmetros padrão, o modo `counting` daria falso negativo, e
