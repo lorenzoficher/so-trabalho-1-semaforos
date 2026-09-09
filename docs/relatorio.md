@@ -182,7 +182,41 @@ ausente em `counting`, e presente em `full`, é o semáforo binário `mutex`.
 É essa condição, e não `none` isoladamente, que sustenta a conclusão deste
 trabalho.
 
-## 5. Conclusão
+## 5. A corrida é real, não é criada pela instrumentação
+
+Uma objeção legítima aos números da seção 3 é que o `sleep(0)` descrito na
+seção 1 poderia estar *fabricando* a corrida, e não apenas revelando-a. Se
+fosse esse o caso, a conclusão deste trabalho não valeria nada fora do
+experimento.
+
+Para responder a isso, o experimento foi repetido com o `sleep(0)`
+desativado, variando o número de itens por produtor. Se a corrida fosse um
+artefato da instrumentação, ela desapareceria por completo; se for real, ela
+deve reaparecer sozinha à medida que o número de oportunidades de troca de
+thread cresce. Resultado, 5 execuções por configuração:
+
+| Itens por produtor | Total de itens | `none` divergentes | `counting` divergentes |
+|--:|--:|--:|--:|
+| 2.500 | 10.000 | 5 / 5 | 0 / 5 |
+| 50.000 | 200.000 | 5 / 5 | 1 / 5 |
+| 250.000 | 1.000.000 | 5 / 5 | 1 / 5 |
+
+O modo `none` diverge sempre, mesmo sem instrumentação nenhuma, porque ali
+falha também a garantia de capacidade, que não depende de agendamento. O
+caso interessante é `counting`: sem o `sleep(0)` e com 10.000 itens ele
+passa nas 5 execuções, mas volta a divergir por conta própria quando a
+escala aumenta (diferenças observadas de -7 itens com 200.000 itens e de
+-746.022 com 1.000.000). Ou seja, a corrida sobre os índices existe de fato
+no modo `counting`; o que a instrumentação faz é apenas torná-la observável
+de forma confiável em uma escala que roda em menos de um segundo, em vez de
+exigir milhões de itens e depender da sorte do agendador.
+
+Isso também explica por que o `sleep(0)` foi mantido na bateria oficial:
+sem ele, com os parâmetros padrão, o modo `counting` daria falso negativo, e
+o trabalho concluiria erroneamente que semáforos contadores bastam para
+garantir exclusão mútua.
+
+## 6. Conclusão
 
 Os resultados confirmam, de forma estatística e não apenas pontual, as duas
 afirmações que o trabalho pedia para provar:
