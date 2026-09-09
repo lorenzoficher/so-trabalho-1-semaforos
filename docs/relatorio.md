@@ -53,10 +53,17 @@ Como a janela dessa corrida é, por natureza, curta, o código insere um
 `time.sleep(0)` (que apenas cede o processador para outra thread pronta,
 sem de fato dormir) entre a leitura do índice e sua gravação, para tornar a
 divergência observável de forma confiável em qualquer máquina, em vez de
-depender da sorte do agendador do sistema operacional. Essa chamada existe
-igualmente nos três modos, então é um custo constante presente em todas as
-condições por igual, isso é discutido em
-`docs/adr/0001-escolha-da-linguagem-python.md`.
+depender da sorte do agendador do sistema operacional. A chamada está
+presente nos três modos, mas o seu custo **não** é igual entre eles: medido
+nesta máquina em 10 execuções por modo, removê-la faz o tempo médio cair de
+85,3 ms para 6,6 ms em `none`, de 244,2 ms para 76,3 ms em `counting`, e de
+484,1 ms para 106,5 ms em `full`, isto é, um acréscimo de cerca de 79 ms,
+168 ms e 378 ms respectivamente. O modo `full` paga mais porque, nele, o
+`sleep(0)` acontece **com o `mutex` já adquirido**: cada cessão de
+processador ocorre dentro da seção crítica e serializa as demais threads. A
+consequência para a leitura dos números da seção 3 está registrada ali, na
+subseção "Custo da exclusão mútua". A escolha de instrumentar assim é
+discutida em `docs/adr/0001-escolha-da-linguagem-python.md`.
 
 ## 2. Testes implementados
 
@@ -125,6 +132,19 @@ outra (dependem da carga do resto do sistema operacional no momento, este
 não é um ambiente isolado de benchmark), mas a ordem relativa entre os três
 modos e a conclusão sobre corretude se mantiveram estáveis em todas as
 baterias rodadas para este trabalho.
+
+Uma ressalva importante sobre esses três fatores: eles medem o programa
+**instrumentado**, não o custo intrínseco de um mutex. Como a seção 1
+detalha, o `sleep(0)` inserido para tornar a corrida observável é cobrado de
+forma desigual entre os modos, e é cobrado mais caro justamente em `full`,
+onde ocorre dentro da seção crítica. Sem essa instrumentação, e nesta mesma
+máquina, `full` custa cerca de **16 vezes** o tempo de `none`, em vez de
+5,07 vezes, e cerca de **1,4 vezes** o de `counting`, em vez de 1,62 (medida
+auxiliar, 10 execuções por modo, não as 30 da bateria oficial). Ou seja, o
+fator relatado na tabela acima *subestima* o custo relativo da exclusão
+mútua, não o exagera. O que se sustenta em qualquer das duas medições é a
+ordem, `none` < `counting` < `full`, e a conclusão sobre corretude, que não
+depende de tempo.
 
 ## 4. Por que três condições, e não duas
 
