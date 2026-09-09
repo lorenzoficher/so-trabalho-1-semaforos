@@ -103,8 +103,14 @@ abaixo vêm exatamente de `results/battery_results.csv`, sem estimativa.
 | `counting` | 0 / 30 | **30 / 30** | 265,5 ms | 208,8 ms | 583,0 ms |
 | `none` | 0 / 30 | **30 / 30** | 85,0 ms | 77,0 ms | 96,7 ms |
 
-Detalhamento da divergência (checksum consumido menos checksum produzido,
-sobre as 30 execuções de cada modo):
+Detalhamento da divergência sobre as 30 execuções de cada modo. A coluna
+`diferenca` do CSV é o checksum consumido **menos** o produzido, e tem
+sinal: nas 30 execuções de `counting`, 19 foram negativas e 11 positivas;
+nas de `none`, 3 negativas e 27 positivas. Uma diferença negativa significa
+que a sobrescrita de slots predominou (itens perdidos), e uma positiva que
+a leitura duplicada predominou (itens contados mais de uma vez). Como as
+duas direções se cancelariam em uma média com sinal, as colunas abaixo
+usam o **valor absoluto** da diferença:
 
 | Modo | \|diferença\| média | \|diferença\| mínima | \|diferença\| máxima | Leituras duplicadas (média) |
 |:--|--:|--:|--:|--:|
