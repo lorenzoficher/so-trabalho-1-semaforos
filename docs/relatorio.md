@@ -111,14 +111,14 @@ abaixo vêm exatamente de `results/battery_results.csv`, sem estimativa.
 
 | Modo | Execuções corretas | Execuções divergentes | Tempo médio | Tempo mínimo | Tempo máximo |
 |:--|--:|--:|--:|--:|--:|
-| `full` | **30 / 30** | 0 / 30 | 430,9 ms | 417,7 ms | 459,9 ms |
-| `counting` | 0 / 30 | **30 / 30** | 265,5 ms | 208,8 ms | 583,0 ms |
-| `none` | 0 / 30 | **30 / 30** | 85,0 ms | 77,0 ms | 96,7 ms |
+| `full` | **30 / 30** | 0 / 30 | 619,2 ms | 579,3 ms | 727,4 ms |
+| `counting` | 0 / 30 | **30 / 30** | 289,1 ms | 269,3 ms | 328,8 ms |
+| `none` | 0 / 30 | **30 / 30** | 107,2 ms | 99,3 ms | 118,3 ms |
 
 Detalhamento da divergência sobre as 30 execuções de cada modo. A coluna
 `diferenca` do CSV é o checksum consumido **menos** o produzido, e tem
-sinal: nas 30 execuções de `counting`, 19 foram negativas e 11 positivas;
-nas de `none`, 3 negativas e 27 positivas. Uma diferença negativa significa
+sinal: nas 30 execuções de `counting`, 16 foram negativas e 14 positivas;
+nas de `none`, 4 negativas e 26 positivas. Uma diferença negativa significa
 que a sobrescrita de slots predominou (itens perdidos), e uma positiva que
 a leitura duplicada predominou (itens contados mais de uma vez). Como as
 duas direções se cancelariam em uma média com sinal, as colunas abaixo
@@ -127,21 +127,28 @@ usam o **valor absoluto** da diferença:
 | Modo | \|diferença\| média | \|diferença\| mínima | \|diferença\| máxima | Leituras duplicadas (média) |
 |:--|--:|--:|--:|--:|
 | `full` | 0 | 0 | 0 | 0 |
-| `counting` | 161.554 | 5.371 | 339.769 | 2.792,6 |
-| `none` | 1.493.564 | 2.156 | 8.214.967 | 3.620,3 |
+| `counting` | 194.327 | 3.443 | 586.258 | 2.888,4 |
+| `none` | 1.375.302 | 9.484 | 4.041.301 | 3.606,8 |
 
-Nenhuma execução teve leitura de slot "nunca escrito" (`nao_escritos`), nos
-três modos, porque nenhum consumidor conseguiu ultrapassar o número de
-itens realmente inseridos até aquele ponto por tempo suficiente para isso;
-a corrupção observada é inteiramente de índices colidindo (sobrescrita e
-leitura duplicada), não de leitura adiantada.
+A leitura de slot "nunca escrito" (`nao_escritos`) é raríssima nestes
+parâmetros, mas não impossível: das 90 execuções da bateria, exatamente uma
+a registrou, a repetição 17 do modo `counting`, com uma única leitura desse
+tipo (linha `counting,17` do CSV). Nas outras 89, incluindo todas as 30 de
+`none` e as 30 de `full`, ela não ocorreu. Isso mostra que a corrupção nos
+modos sem exclusão mútua é *predominantemente*, mas não exclusivamente, de
+índices colidindo (sobrescrita e leitura duplicada): em uma execução, o
+índice de leitura chegou a apontar para um slot que nenhum produtor havia
+escrito ainda. Como os dois índices sofrem perda de atualização de forma
+independente, o de leitura pode, ocasionalmente, ficar à frente do de
+escrita, e é exatamente isso que essa execução capturou. O modo `full`
+elimina também esse caso.
 
 ### Custo da exclusão mútua
 
-- `full` levou **5,07 vezes** mais tempo que `none` (nenhuma sincronização).
-- `full` levou **1,62 vezes** mais tempo que `counting` (capacidade
+- `full` levou **5,77 vezes** mais tempo que `none` (nenhuma sincronização).
+- `full` levou **2,14 vezes** mais tempo que `counting` (capacidade
   garantida, mas sem exclusão mútua).
-- `counting` levou **3,12 vezes** mais tempo que `none`, evidenciando que
+- `counting` levou **2,70 vezes** mais tempo que `none`, evidenciando que
   boa parte do custo de `full` sobre `counting` já vem de garantir a
   capacidade do buffer, e não só do `mutex` adicional.
 
@@ -155,14 +162,16 @@ Uma ressalva importante sobre esses três fatores: eles medem o programa
 **instrumentado**, não o custo intrínseco de um mutex. Como a seção 1
 detalha, o `sleep(0)` inserido para tornar a corrida observável é cobrado de
 forma desigual entre os modos, e é cobrado mais caro justamente em `full`,
-onde ocorre dentro da seção crítica. Sem essa instrumentação, e nesta mesma
-máquina, `full` custa cerca de **16 vezes** o tempo de `none`, em vez de
-5,07 vezes, e cerca de **1,4 vezes** o de `counting`, em vez de 1,62 (medida
-auxiliar, 10 execuções por modo, não as 30 da bateria oficial). Ou seja, o
-fator relatado na tabela acima *subestima* o custo relativo da exclusão
-mútua, não o exagera. O que se sustenta em qualquer das duas medições é a
-ordem, `none` < `counting` < `full`, e a conclusão sobre corretude, que não
-depende de tempo.
+onde ocorre dentro da seção crítica. Repetindo a medição sem essa
+instrumentação, nesta mesma máquina (medida auxiliar, 10 execuções por modo,
+não as 30 da bateria oficial), os fatores mudam nos dois sentidos: `full`
+passa a custar cerca de **16 vezes** o tempo de `none`, em vez de 5,77, mas
+apenas cerca de **1,4 vezes** o de `counting`, em vez de 2,14. Ou seja, a
+tabela acima *subestima* o custo do `mutex` em relação a não sincronizar
+nada, e ao mesmo tempo o *superestima* em relação a só garantir capacidade.
+O que se sustenta em qualquer das duas medições é a ordem, `none` <
+`counting` < `full`, e a conclusão sobre corretude, que não depende de
+tempo.
 
 ## 4. Por que três condições, e não duas
 
@@ -174,13 +183,22 @@ buffer pode ter simplesmente sido usado além da sua capacidade, sem nada
 para impedir isso, um problema de capacidade, não de exclusão mútua.
 
 O modo `counting` fecha essa segunda explicação: os semáforos contadores
-continuam garantindo que o número de escritas bem-sucedidas seja sempre
-igual ao número de leituras bem-sucedidas (nenhuma execução registrou
-`nao_escritos` maior que zero), a capacidade nunca é violada, e mesmo assim
-o checksum diverge em 100% das execuções (tabela da seção 3). A única coisa
-ausente em `counting`, e presente em `full`, é o semáforo binário `mutex`.
-É essa condição, e não `none` isoladamente, que sustenta a conclusão deste
-trabalho.
+continuam garantindo que o número de leituras bem-sucedidas nunca ultrapasse
+o número de escritas concluídas, e que o número de itens pendentes no buffer
+nunca exceda a sua capacidade. Essa garantia é estrutural, vem da própria
+semântica de `acquire`/`release` sobre `empty` e `full`, e não depende de
+agendamento. Mesmo assim, o checksum diverge em 100% das execuções (tabela
+da seção 3). A única coisa ausente em `counting`, e presente em `full`, é o
+semáforo binário `mutex`. É essa condição, e não `none` isoladamente, que
+sustenta a conclusão deste trabalho.
+
+Vale distinguir duas coisas que poderiam ser confundidas aqui. Os semáforos
+contadores garantem que a *contagem* de itens pendentes respeite a
+capacidade; eles não garantem que cada item ocupe um slot próprio, porque o
+cálculo do índice não está protegido. É por isso que `counting` perde e
+duplica itens, e é também por isso que uma das 30 execuções conseguiu ler um
+slot nunca escrito (seção 3): a contagem estava correta, o *endereço*
+calculado a partir dela não estava.
 
 ## 5. A corrida é real, não é criada pela instrumentação
 
@@ -227,8 +245,8 @@ afirmações que o trabalho pedia para provar:
    corretamente controlada por semáforos contadores (`counting`).
 2. **Com exclusão mútua** garantida por um semáforo binário (modo `full`),
    o mesmo programa produz resultado numérico correto em **100% das 30
-   execuções**, ao custo medido de cerca de **1,6 vezes** o tempo do modo
-   `counting` e **5 vezes** o tempo do modo `none`.
+   execuções**, ao custo medido de cerca de **2,1 vezes** o tempo do modo
+   `counting` e **5,8 vezes** o tempo do modo `none`.
 
 A correção tem um custo real e mensurável, mas é a única das três condições
 que garante corretude em todas as execuções observadas.

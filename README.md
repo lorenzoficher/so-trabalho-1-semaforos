@@ -14,9 +14,9 @@ Bateria oficial, 30 execuções por modo, Windows 11 / Python 3.14.3:
 
 | Modo | Semáforos ativos | Execuções | Divergentes | Tempo médio |
 |:--|:--|--:|--:|--:|
-| `full` | `empty`, `full`, `mutex` | 30 | **0** | 430,9 ms |
-| `counting` | `empty`, `full` | 30 | **30** | 265,5 ms |
-| `none` | nenhum | 30 | **30** | 85,0 ms |
+| `full` | `empty`, `full`, `mutex` | 30 | **0** | 619,2 ms |
+| `counting` | `empty`, `full` | 30 | **30** | 289,1 ms |
+| `none` | nenhum | 30 | **30** | 107,2 ms |
 
 Relatório completo, com a explicação de cada modo e a análise dos números:
 [`docs/relatorio.md`](docs/relatorio.md). Enunciado original:
@@ -50,7 +50,7 @@ python tests/battery.py
 Cada execução isolada imprime uma linha assim:
 
 ```text
-modo=full produzido=50005000 consumido=50005000 diferenca=0 duplicados=0 nao_escritos=0 tempo_ms=428.843
+modo=full produzido=50005000 consumido=50005000 diferenca=0 duplicados=0 nao_escritos=0 tempo_ms=612.632
 ```
 
 ## Os três modos de sincronização
