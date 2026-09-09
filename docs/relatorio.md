@@ -50,11 +50,18 @@ parâmetro, sem nenhuma outra mudança de código entre eles:
   (`mutex`) que protege o trecho onde o índice é lido, calculado, usado
   para acessar o slot do buffer, e incrementado.
 
-A escolha desse problema, entre as sugestões do enunciado, foi deliberada: é
-o único, entre os sugeridos, em que o semáforo é necessário por dois
-motivos ao mesmo tempo, contar recursos disponíveis (`empty`/`full`) e
-excluir mutuamente (`mutex`), e não apenas como substituto de um `Lock`
-comum. O raciocínio completo está em `PRD.md`, seção 2.
+A escolha desse problema, entre as sugestões do enunciado, foi deliberada:
+é o caso mais direto em que o semáforo é necessário por dois motivos ao
+mesmo tempo, contar recursos disponíveis (`empty`/`full`) e excluir
+mutuamente (`mutex`), e não apenas como substituto de um `Lock` comum.
+Outros problemas sugeridos também combinam as duas necessidades, o jantar
+dos filósofos e o restaurante universitário com múltiplas filas entre eles,
+mas neles a contagem e a exclusão se misturam no mesmo conjunto de
+semáforos, o que dificulta atribuir uma divergência a uma causa ou à outra.
+Aqui os dois papéis ficam em objetos separados, e é justamente isso que
+permite desligar só a exclusão mútua e manter a capacidade garantida, que é
+a condição `counting` da seção 4. O raciocínio completo está em `PRD.md`,
+seção 2.
 
 O motivo da divergência é sempre o mesmo trecho de código, em
 `src/buffer.py`: `indice = _write_index % capacidade` seguido, mais tarde,
