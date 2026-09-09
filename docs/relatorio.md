@@ -17,12 +17,25 @@ buffer compartilhado (`BoundedBuffer`, em `src/buffer.py`).
 
 Cada produtor gera uma faixa própria e disjunta de inteiros e tenta
 depositá-los no buffer, um a um. Cada consumidor retira itens do buffer e
-os acumula em uma soma de verificação (checksum). Ao final de uma execução,
-o checksum de tudo o que foi produzido é comparado ao checksum de tudo o
-que foi consumido: se os dois batem, o buffer funcionou corretamente; se
-divergem, algum item foi perdido, sobrescrito ou lido mais de uma vez, o
-que só pode acontecer se o acesso concorrente aos índices do buffer tiver
-corrompido o estado compartilhado.
+os guarda para conferência posterior. Ao final de uma execução, o checksum
+de tudo o que foi produzido é comparado ao checksum de tudo o que foi
+consumido: se os dois batem, o buffer funcionou corretamente; se divergem,
+algum item foi perdido, sobrescrito ou lido mais de uma vez, o que só pode
+acontecer se o acesso concorrente aos índices do buffer tiver corrompido o
+estado compartilhado.
+
+Um cuidado deliberado aqui é que **a própria medição não pode ser uma
+corrida**, ou não se saberia se a divergência vem do buffer ou do
+instrumento. Por isso nada é somado concorrentemente. O checksum produzido
+não é acumulado por ninguém: como as faixas dos produtores são disjuntas e
+contíguas de 1 a 10000, ele sai de fórmula fechada, `n(n+1)/2`. Do lado do
+consumo, cada consumidor acumula os valores lidos em uma lista local, e só
+ao terminar os anexa a uma lista compartilhada, sob um `Lock` que existe
+apenas para a instrumentação e é independente do modo em teste. A soma
+final e a contagem de duplicados acontecem depois de todos os `join()`, em
+uma thread só. Ou seja, qualquer divergência observada vem do
+`BoundedBuffer`, nunca da forma de medir (`src/experiment.py`, e
+`docs/spec/plan.md`, seção 4).
 
 O programa aceita três **modos de sincronização**, escolhidos por
 parâmetro, sem nenhuma outra mudança de código entre eles:
