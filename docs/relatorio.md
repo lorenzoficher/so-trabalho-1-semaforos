@@ -56,9 +56,9 @@ divergência observável de forma confiável em qualquer máquina, em vez de
 depender da sorte do agendador do sistema operacional. A chamada está
 presente nos três modos, mas o seu custo **não** é igual entre eles: medido
 nesta máquina em 10 execuções por modo, removê-la faz o tempo médio cair de
-85,3 ms para 6,6 ms em `none`, de 244,2 ms para 76,3 ms em `counting`, e de
-484,1 ms para 106,5 ms em `full`, isto é, um acréscimo de cerca de 79 ms,
-168 ms e 378 ms respectivamente. O modo `full` paga mais porque, nele, o
+105,7 ms para 9,0 ms em `none`, de 299,4 ms para 91,1 ms em `counting`, e de
+648,2 ms para 147,7 ms em `full`, isto é, um acréscimo de cerca de 97 ms,
+208 ms e 500 ms respectivamente. O modo `full` paga mais porque, nele, o
 `sleep(0)` acontece **com o `mutex` já adquirido**: cada cessão de
 processador ocorre dentro da seção crítica e serializa as demais threads. A
 consequência para a leitura dos números da seção 3 está registrada ali, na
@@ -166,7 +166,7 @@ onde ocorre dentro da seção crítica. Repetindo a medição sem essa
 instrumentação, nesta mesma máquina (medida auxiliar, 10 execuções por modo,
 não as 30 da bateria oficial), os fatores mudam nos dois sentidos: `full`
 passa a custar cerca de **16 vezes** o tempo de `none`, em vez de 5,77, mas
-apenas cerca de **1,4 vezes** o de `counting`, em vez de 2,14. Ou seja, a
+apenas cerca de **1,6 vezes** o de `counting`, em vez de 2,14. Ou seja, a
 tabela acima *subestima* o custo do `mutex` em relação a não sincronizar
 nada, e ao mesmo tempo o *superestima* em relação a só garantir capacidade.
 O que se sustenta em qualquer das duas medições é a ordem, `none` <
@@ -217,15 +217,17 @@ thread cresce. Resultado, 5 execuções por configuração:
 |--:|--:|--:|--:|
 | 2.500 | 10.000 | 5 / 5 | 0 / 5 |
 | 50.000 | 200.000 | 5 / 5 | 1 / 5 |
-| 250.000 | 1.000.000 | 5 / 5 | 1 / 5 |
+| 250.000 | 1.000.000 | 5 / 5 | 2 / 5 |
 
 O modo `none` diverge sempre, mesmo sem instrumentação nenhuma, porque ali
 falha também a garantia de capacidade, que não depende de agendamento. O
 caso interessante é `counting`: sem o `sleep(0)` e com 10.000 itens ele
 passa nas 5 execuções, mas volta a divergir por conta própria quando a
-escala aumenta (diferenças observadas de -7 itens com 200.000 itens e de
--746.022 com 1.000.000). Ou seja, a corrida sobre os índices existe de fato
-no modo `counting`; o que a instrumentação faz é apenas torná-la observável
+escala aumenta, e com frequência crescente (diferença de -100.712 na
+execução divergente com 200.000 itens, e de -504.982 e -250.337 nas duas
+divergentes com 1.000.000). Ou seja, a corrida sobre os índices existe de
+fato no modo `counting`; o que a instrumentação faz é apenas torná-la
+observável
 de forma confiável em uma escala que roda em menos de um segundo, em vez de
 exigir milhões de itens e depender da sorte do agendador.
 
