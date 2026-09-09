@@ -75,11 +75,23 @@ o valor; a ordem de retirada é a ordem de inserção (FIFO); o buffer
 reaproveita corretamente os slots ao dar a volta (índice módulo
 capacidade); e uma capacidade inválida levanta erro. Esses testes provam
 que a estrutura de dados em si está correta, isolando esse fator do
-fenômeno de concorrência, que é medido separadamente (seção 2.2).
+fenômeno de concorrência, que é medido separadamente (seção 2.3).
 
 Resultado: **10 testes, 10 aprovados**, em todas as execuções.
 
-### 2.2. Bateria de execuções (`tests/battery.py`)
+### 2.2. Testes de validação de entrada (`tests/test_experiment.py`)
+
+Também determinísticos e sem concorrência, cobrem os erros que
+`run_experiment` deve recusar *antes* de criar qualquer thread: número de
+produtores ou de consumidores inválido (zero ou negativo), e total de itens
+não divisível pelo número de consumidores, caso em que a divisão de trabalho
+entre consumidores não fecharia e a execução travaria esperando itens que
+nunca chegam. São 4 testes, todos aprovados.
+
+Somados aos da seção 2.1, a suíte tem **14 testes, 14 aprovados**
+(`python -m pytest tests/ -v`).
+
+### 2.3. Bateria de execuções (`tests/battery.py`)
 
 Roda o experimento completo (4 produtores, 4 consumidores, 2500 itens por
 produtor, 10000 itens no total, buffer de 10 slots) **30 vezes para cada um

@@ -32,7 +32,10 @@ Relatório completo, com a explicação de cada modo e a análise dos números:
 ## Como executar
 
 ```powershell
-# testes deterministicos da API do buffer
+# suite completa de testes deterministicos (14 testes)
+python -m pytest tests/ -v
+
+# so os testes da API do buffer (10 testes)
 python -m pytest tests/test_buffer.py -v
 
 # uma execucao isolada, por modo
@@ -83,7 +86,8 @@ capacidade do buffer.
 │   ├── experiment.py          # produtores, consumidores, checksum, tempo
 │   └── main.py                 # CLI, uma execucao por chamada
 ├── tests/
-│   ├── test_buffer.py          # testes deterministicos da API
+│   ├── test_buffer.py          # testes deterministicos da API (10)
+│   ├── test_experiment.py      # validacao de entrada de run_experiment (4)
 │   └── battery.py              # bateria oficial, 30 execucoes por modo
 └── results/
     └── battery_results.csv     # gerado por tests/battery.py
