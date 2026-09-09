@@ -2,7 +2,11 @@
 
 - **Disciplina:** Sistemas Operacionais
 - **Autor:** Lorenzo Ficher
-- **Repositório:** ver `README.md` para instruções de execução
+- **Data:** 9 de setembro de 2026
+- **Repositório:** <https://github.com/lorenzoficher/so-trabalho-1-semaforos>
+  (instruções de execução no `README.md`)
+- **Ambiente das medições:** Windows 11, Python 3.14.3, sem WSL nem
+  compilador
 
 ## 1. Descrição da aplicação
 
